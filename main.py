@@ -19,8 +19,8 @@ if __name__ == '__main__':
         user_info = jsmin(json_file.read(), quote_chars="/*")
     config_dict = json.loads(user_info)
     if config_dict["OpenAI_Key"] == "default":
-        print("You need to change the OpenAI_Key to your personal key in the JSON file before you can successfully run"
-              " this program")
+        print("\nYou need to change the OpenAI_Key to your personal key in the JSON file before you can successfully run"
+              " this program\n\n")
         exit()
     #  Define global variables for wave files
     sample_rate = 16000
