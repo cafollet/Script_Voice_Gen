@@ -59,6 +59,7 @@ if __name__ == '__main__':
         )
     gen_script = list(response['choices'][0]['message']['content'].split("\n"))
     #  print(gen_script)
+    print("Generation Started")
     name_bank = ("HOMER", "MARGE", "BART", "LISA", "MAGGIE", "MOE", "FLANDERS", "APU", "FRINK", "MILHOUSE")
     scene_bank = []
     model_dict = {"HOMER": "TM:dy1tchfdhcwf", "MARGE": "TM:zyz4k95yvjb5", "BART": "TM:ej2webf6307y",
