@@ -2,7 +2,7 @@
     "Show": "The Simpsons",
     /* Can choose show out of the following pool:
        "The Simpsons"*/
-    "OpenAI_Key": "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"
+    "OpenAI_Key": "default"
     /* You must find your own OpenAI Key and paste it here in order to use this program */
 
 
