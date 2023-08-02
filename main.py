@@ -19,8 +19,8 @@ if __name__ == '__main__':
         user_info = jsmin(json_file.read(), quote_chars="/*")
     config_dict = json.loads(user_info)
     if config_dict["OpenAI_Key"] == "default":
-        print("\nYou need to change the OpenAI_Key to your personal key in the JSON file before you can successfully run"
-              " this program\n\n")
+        print("\nYou need to change the OpenAI_Key to your personal key in the JSON file before you can successfully "
+              "run this program\n\n")
         exit()
     #  Define global variables for wave files
     sample_rate = 16000
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             ]
         )
     gen_script = list(response['choices'][0]['message']['content'].split("\n"))
-    print(gen_script)
+    #  print(gen_script)
     name_bank = ("HOMER", "MARGE", "BART", "LISA", "MAGGIE", "MOE", "FLANDERS", "APU", "FRINK", "MILHOUSE")
     scene_bank = []
     model_dict = {"HOMER": "TM:dy1tchfdhcwf", "MARGE": "TM:zyz4k95yvjb5", "BART": "TM:ej2webf6307y",
