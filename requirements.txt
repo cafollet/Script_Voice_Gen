@@ -4,3 +4,4 @@ requests>=2.28.2
 simpleaudio>=1.0.4
 numpy>=1.25.1
 ipython>=8.13.2
+pwinput>=1.0.3

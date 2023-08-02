@@ -2,8 +2,14 @@
     "Show": "The Simpsons",
     /* Can choose show out of the following pool:
        "The Simpsons"*/
-    "OpenAI_Key": "default"
+    "OpenAI_Key": "default",
     /* You must find your own OpenAI Key and paste it here in order to use this program */
+    "FakeYou": {
+        "User": "default",
+        "Pass": "default"
+        /* Username and passwork you want to use for FakeYou.
+        This REALLY helps with speed if you have a premium account */
+    }
 
 
 }

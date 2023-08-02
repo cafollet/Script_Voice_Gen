@@ -1,16 +1,10 @@
-from jsmin import jsmin
-import json
-import openai
-import requests
+import json, openai, requests, logging, simpleaudio, wave, string
+from pwinput import pwinput
 from time import sleep
-import logging
-import simpleaudio
-import wave
 from os import path
 from numpy import random
 import random as rd
-import string
-
+from jsmin import jsmin
 
 if __name__ == '__main__':
 
@@ -19,16 +13,61 @@ if __name__ == '__main__':
         user_info = jsmin(json_file.read(), quote_chars="/*")
     config_dict = json.loads(user_info)
     if config_dict["OpenAI_Key"] == "default":
-        print("\nYou need to change the OpenAI_Key to your personal key in the JSON file before you can successfully "
-              "run this program\n\n")
-        exit()
+        temp_var = pwinput(prompt='OpenAI API Key: ')
+        openai.api_key = temp_var
+    else:
+        openai.api_key = config_dict["OpenAI_Key"]
+
+    username = ''
+    password = ''
+    if config_dict["FakeYou"]["User"] == "default":
+        username = input("FakeYou Username or email (Press enter/return to skip this step, but the processing will be "
+                         "slower without a premium account)")
+        if username != '':
+            password = pwinput()
+    else:
+        username = config_dict["Fakeyou"]["User"]
+        if config_dict["FakeYou"]["Pass"] == "default":
+            password = pwinput(prompt=f'FakeYou Password for {username}: ')
+        else:
+            password = config_dict["Fakeyou"]["Pass"]
     #  Define global variables for wave files
     sample_rate = 16000
     num_channels = 2
     bytes_per_sample = 2
 
     #  Define the ID Keys for The OpenAI and FakeYou APIs
-    openai.api_key = config_dict["OpenAI_Key"]
+    if username == '' or password == '':
+        print("FakeYou Login Credentials Skipped\n")
+        pass
+    else:
+        ljson = {"username_or_email": username, "password": password}
+        # login payload
+
+        logging.debug("Sending Login request")
+
+        loginHandler = requests.Session().post("https://api.fakeyou.com/login", json=ljson)
+        # sending the login request, this will return cookies and status
+        logging.debug("Login request sent")
+
+        lrjson = loginHandler.json()
+        # our response from 'login request'
+        if loginHandler.status_code == 200:
+            # this means we're in without 'ERRORS'
+
+            logging.debug("Processing the response (login)")
+            if lrjson["success"] == True:
+                # login success
+                logging.debug("Login has been done successfully")
+                sjson = requests.Session().get("https://api.fakeyou.com/session").json()
+
+            elif lrjson["success"] == False and lrjson["error_type"] == "InvalidCredentials":
+                # login failed
+                logging.critical("FALSE email/password, raising error.")
+
+        elif loginHandler.status_code == 429:
+            # ip ban !
+            logging.critical("IP IS BANNED (caused by login request)")
 
     #  Prompt the command line to ask for a script
     prompt = input(f"Write a '{config_dict['Show']}' prompt: ")
@@ -59,7 +98,7 @@ if __name__ == '__main__':
         )
     gen_script = list(response['choices'][0]['message']['content'].split("\n"))
     #  print(gen_script)
-    print("Generation Started")
+    print("\nGeneration Started")
     name_bank = ("HOMER", "MARGE", "BART", "LISA", "MAGGIE", "MOE", "FLANDERS", "APU", "FRINK", "MILHOUSE")
     scene_bank = []
     model_dict = {"HOMER": "TM:dy1tchfdhcwf", "MARGE": "TM:zyz4k95yvjb5", "BART": "TM:ej2webf6307y",
@@ -118,7 +157,7 @@ if __name__ == '__main__':
                     elif output["state"]["status"] == "dead" or output["state"]["status"] == "complete_failure":
                         break
                 if audio_url is None:
-                    print("", "Production Failed")
+                    print("\n", "Production Failed")
                 else:
                     print(f"\r", end="")
                     print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ", output["state"]["status"])
