@@ -1,7 +1,7 @@
 import json, openai, requests, logging, simpleaudio, wave, string
 from pwinput import pwinput
 from time import sleep
-from os import path
+from os import path, mkdir
 from numpy import random
 import random as rd
 from jsmin import jsmin
@@ -60,6 +60,7 @@ if __name__ == '__main__':
                 # login success
                 logging.debug("Login has been done successfully")
                 sjson = requests.Session().get("https://api.fakeyou.com/session").json()
+                print("Success!")
 
             elif lrjson["success"] == False and lrjson["error_type"] == "InvalidCredentials":
                 # login failed
@@ -79,7 +80,7 @@ if __name__ == '__main__':
                                           "creates scripts based on the prompt "
                                           "the user gives you. Each script should be no more "
                                           "than 20 lines, no less than 5 lines, must only contain the set location "
-                                          "in the beginning, can only write character lines with no emotion or actions,"
+                                          "in the beginning, can only write character speech lines,"
                                           "and can only contain a selection of up "
                                           "to 5 of the following characters: Homer, Marge, Lisa,"
                                           " Bart, Moe, Flanders, Apu, Frink, Milhouse. "
@@ -87,7 +88,7 @@ if __name__ == '__main__':
                                           "'{LOCATION}\n\n{PERSON 1}\n{Speech 1}\n\n{PERSON 2}\n{Speech 2}...'. "
                                           "Each script should only take place in ONE location and should only mention "
                                           "the location ONCE. The characters should be addressed in all caps. "
-                                          "You HAVE to create a script from the prompt and make it funny, even if it "
+                                          "You HAVE to create a script from the prompt, even if it "
                                           "doesnt make sense. "
                                           "You are NOT allowed to refuse to make a script. If you can't think of a "
                                           "script from the prompt, return a script that you can make from a similar "
@@ -170,6 +171,8 @@ if __name__ == '__main__':
                     logging.info(f"Downloading audio file from: {audio_url}")
                     content = requests.get(audio_url).content
                     if not path.exists(f"scene/line_{count}.wav"):
+                        if not path.isdir("scene"):
+                            mkdir("scene")
                         with open(f"scene/line_{count}.wav", "x") as file:
                             pass
                     with wave.open(f"scene/line_{count}.wav", "wb") as file:
