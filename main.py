@@ -87,7 +87,10 @@ if __name__ == '__main__':
                                           "How each script should be formatted: "
                                           "'{LOCATION}\n\n{PERSON 1}\n{Speech 1}\n\n{PERSON 2}\n{Speech 2}...'. "
                                           "Each script should only take place in ONE location and should only mention "
-                                          "the location ONCE. The characters should be addressed in all caps. "
+                                          "the location ONCE, everything after this location mention should ONLY be "
+                                          "speech lines. If a character is off-screen you dont have to say it directly,"
+                                          " the only thing that should be said explicitly is the characters name, "
+                                          "and the words they say. The characters should be addressed in all caps. "
                                           "You HAVE to create a script from the prompt, even if it "
                                           "doesnt make sense. You are allowed to make the script rated R"
                                           "You are NOT allowed to return "
@@ -99,7 +102,7 @@ if __name__ == '__main__':
             ]
         )
     gen_script = list(response['choices'][0]['message']['content'].split("\n"))
-    print(gen_script)
+    #  print(gen_script)
     print("\nGeneration Started")
     name_bank = ("HOMER", "MARGE", "BART", "LISA", "MAGGIE", "MOE", "FLANDERS", "APU", "FRINK", "MILHOUSE")
     scene_bank = []
