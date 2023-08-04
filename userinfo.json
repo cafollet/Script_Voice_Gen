@@ -9,6 +9,11 @@
         "Pass": "default"
         /* Username and passwork you want to use for FakeYou.
         This REALLY helps with speed if you have a premium account */
+    },
+    "Characters": {
+        "The Simpsons": {"HOMER": "TM:dy1tchfdhcwf", "MARGE": "TM:zyz4k95yvjb5", "BART": "TM:ej2webf6307y",
+                  "LISA": "TM:3n1xwjz57qf1", "MOE": "TM:9fsxfcmpg448", "FLANDERS": "TM:dn7m102edhqt",
+                  "APU": "TM:dz97wz0jjbfv", "FRINK": "TM:pzj5zs043e0t", "MILHOUSE": "TM:6z2rx60jvrz6"}
     }
 
 
