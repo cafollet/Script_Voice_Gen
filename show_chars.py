@@ -2,7 +2,7 @@ import openai
 
 class Show:
     """Class that stores all of a shows information"""
-    def __init__(self, show, char_dict):
+    def __init__(self, show: str, char_dict: str) -> None:
         """Takes show title and character dictionary where every characters name is
         assigned to its respective FakeYou ID"""
         self.show = show
@@ -20,7 +20,7 @@ class Show:
                                               "than 20 lines, no less than 5 lines, must only contain the set location "
                                               "in the beginning, can only write character speech lines,"
                                               "and can only contain a selection of up "
-                                              f"to 5 of the following characters: {self.characters}"
+                                              f"to 5 of the following characters: {self.characters} "
                                               "How each script should be formatted: "
                                               "'{LOCATION}\n\n{PERSON 1}\n{Speech 1}\n\n{PERSON 2}\n{Speech 2}...'. "
                                               "Each script should only take place in ONE location and should only "

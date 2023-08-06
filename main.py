@@ -97,7 +97,7 @@ if __name__ == '__main__':
     show = Show(config_dict['Show'], config_dict['Characters'][f'{config_dict["Show"]}'])
     prompt = input(f"Write a '{show.show}' prompt: ")
     script = show.write(openai_key, prompt)
-    print(script)
+    # print(script)
     print("\nGeneration Started")
     model_dict = show.voice_ids
     name_bank = show.characters
