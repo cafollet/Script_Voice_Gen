@@ -1,4 +1,4 @@
-import json, requests, logging, simpleaudio, wave, string
+import json, requests, logging, simpleaudio, wave, string, sys
 from show_chars import Show
 from pwinput import pwinput
 from time import sleep
@@ -27,11 +27,17 @@ def token_gen():
     return f"{let_seed1}{seed_1}{let_seed2}-{let_seed3}{seed_2}{let_seed4}-{let_seed5}{seed_3}{let_seed6}-" \
            f"{let_seed7}{let_seed8}{let_seed9}"
 
+def stream_print(line: str) -> None:
+    for c in s:
+        sys.stdout.write(c)
+        sys.stdout.flush()
+        time.sleep(0.15)
 
 if __name__ == '__main__':
 
-    #  Open the json config file
+    #  Open the JSON config file
     with open('userinfo.json') as json_file:
+        # Remove comments in JSON
         user_info = jsmin(json_file.read(), quote_chars="/*")
     config_dict = json.loads(user_info)
     if config_dict["OpenAI_Key"] == "default":
@@ -64,6 +70,11 @@ if __name__ == '__main__':
         print("FakeYou Login Credentials Skipped\n")
         pass
     else:
+
+        # Original code below written by shards-7 in FakeYou.py, Source Link:
+        # https://github.com/shards-7/fakeyou.py
+        # BEGIN CODE
+
         ljson = {"username_or_email": username, "password": password}
         # login payload
 
@@ -93,12 +104,29 @@ if __name__ == '__main__':
             # ip ban !
             logging.critical("IP IS BANNED (caused by login request)")
 
-    #  Prompt the command line to ask for a script
+        # END CODE
+
+    # Create the show object using the shaw name and character bank given in the JSON file
     show = Show(config_dict['Show'], config_dict['Characters'][f'{config_dict["Show"]}'])
+
+    #  Prompt the command line to ask for a script
     prompt = input(f"Write a '{show.show}' prompt: ")
-    script = show.write(openai_key, prompt)
-    # print(script)
-    print("\nGeneration Started")
+    script_str = show.write(openai_key, prompt)
+    script = list(script_str.split("\n"))
+
+    if not path.isdir("scene"):
+        mkdir("scene")
+
+    if path.exists("scene/script.txt"):
+        with open("scene/script.txt", "w") as script_text:
+            script_text.write(script_str)
+    else:
+        with open("scene/script.txt", "x") as script_text:
+            script_text.write(script_str)
+
+    print("\nScript Generated")
+    sleep(1)
+    print("\nVoice Generation Started")
     model_dict = show.voice_ids
     name_bank = show.characters
     scene_bank = []
@@ -114,17 +142,33 @@ if __name__ == '__main__':
         lines = []
         for i, x in enumerate(script):
             line = ""
-            if x in name_bank:
-                if x not in scene_bank:
-                    scene_bank.append(x)
+            char_name = ""
+            # split_name variable created to detect with lines like "CHARACTER (action)" and change them to "CHARACTER"
+            # for voice assignment
+            split_name = x.split(" ")
+
+            if (split_name[0] in name_bank)\
+                    or ((len(split_name)) > 1
+                        and ((split_name[0] + " " + split_name[1]) in name_bank)):
+                if (split_name[0] in name_bank) and split_name[0] not in scene_bank:
+                    char_name = split_name[0]
+                    scene_bank.append(char_name)
+                elif x not in scene_bank:
+                    char_name = split_name[0] + " " + split_name[1]
+                    scene_bank.append(char_name)
+                # Keeps track of total lines rendered
                 count += 1
                 line = script[i+1]
+
+                # Append the single voice lines generated to list to print later
                 lines.append(f"{x}")
-                lines.append(f"{script[i+1]}")
-                # send the line to FakeYou api
-                voicemodel_uuid = model_dict[x]
+                lines.append(f"{line}")
+
+                # Send the line to FakeYou api
+                voicemodel_uuid = model_dict[char_name]
                 text = line
                 id_tok = token_gen()
+                sleep(1)
                 audio_uuid = requests.post("https://api.fakeyou.com/tts/inference",
                                            json=dict(uuid_idempotency_token=id_tok, tts_model_token=voicemodel_uuid,
                                                      inference_text=text)).json()['inference_job_token']
@@ -144,11 +188,11 @@ if __name__ == '__main__':
                     elif output["state"]["status"] == "dead" or output["state"]["status"] == "complete_failure":
                         break
                 if audio_url is None:
-                    print("\n", "Production Failed")
+                    print("\nProduction Failed")
                 else:
-                    if t < 20:
-                        sleep(20)
-                        t += 20
+                    # if t < 20:
+                    #     sleep(20)
+                    #     t += 20
                     print(f"\r", end="")
                     print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ", output["state"]["status"])
                     total = sample_rate * num_channels * bytes_per_sample
@@ -160,8 +204,6 @@ if __name__ == '__main__':
                     logging.info(f"Downloading audio file from: {audio_url}")
                     content = requests.get(audio_url).content
                     if not path.exists(f"scene/line_{count}.wav"):
-                        if not path.isdir("scene"):
-                            mkdir("scene")
                         with open(f"scene/line_{count}.wav", "x") as file:
                             pass
                     with wave.open(f"scene/line_{count}.wav", "wb") as file:

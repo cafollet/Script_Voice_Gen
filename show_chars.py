@@ -39,5 +39,5 @@ class Show:
                 {"role": "user", "content": prompt}
             ]
         )
-        gen_script = list(response['choices'][0]['message']['content'].split("\n"))
+        gen_script = response['choices'][0]['message']['content']
         return gen_script
