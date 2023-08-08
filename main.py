@@ -107,7 +107,13 @@ if __name__ == '__main__':
     if user_choice1 == 1:
 
         new_show_title = input("Show Title: ")
-        new_show_characters = input("Show Characters: ")
+        new_show_char_dict = {}
+        loop = "Y"
+        while loop != "Y":
+            new_show_character = input("Add Character: ")
+            new_show_char_val = input(f"Add {new_show_character}'s FakeYou Voice Model Key: ")
+            new_show_char_dict[new_show_character] = new_show_char_val
+            loop = input(new_show_character + " added, add another(Y/N)? ")
         print("\nFeature in development\n")
         sleep(2)
 
