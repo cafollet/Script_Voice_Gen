@@ -242,11 +242,11 @@ if __name__ == '__main__':
                 if (split_name[0] in name_bank)\
                         or ((len(split_name)) > 1
                             and ((split_name[0] + " " + split_name[1]) in name_bank)):
-                    if (split_name[0] in name_bank) and split_name[0] not in scene_bank:
+                    if split_name[0] in name_bank:
                         char_name = split_name[0]
-                        scene_bank.append(char_name)
-                    elif x not in scene_bank:
+                    elif ((len(split_name)) > 1) and ((split_name[0] + " " + split_name[1]) in name_bank):
                         char_name = split_name[0] + " " + split_name[1]
+                    if char_name not in scene_bank:
                         scene_bank.append(char_name)
                     # Keeps track of total lines rendered
                     count += 1
