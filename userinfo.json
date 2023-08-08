@@ -1,7 +1,7 @@
 {
-    "Show": "The Simpsons",
+    "Show": "Default",
     /* Can choose show out of the following pool:
-       "The Simpsons", "Family Guy"*/
+       "Default", "The Simpsons", "Family Guy"*/
     "OpenAI_Key": "default",
     /* You must find your own OpenAI Key and paste it here in order to use this program */
     "FakeYou": {
@@ -14,7 +14,7 @@
         "The Simpsons": {"HOMER": "TM:dy1tchfdhcwf", "MARGE": "TM:zyz4k95yvjb5", "BART": "TM:ej2webf6307y",
                   "LISA": "TM:3n1xwjz57qf1", "MOE": "TM:9fsxfcmpg448", "FLANDERS": "TM:dn7m102edhqt",
                   "APU": "TM:dz97wz0jjbfv", "FRINK": "TM:pzj5zs043e0t", "MILHOUSE": "TM:6z2rx60jvrz6"},
-	 "Family Guy": {"PETER": "TM:9yh8jn3p854a", "LOUIS": "TM:wy2db085axmp", "CHRIS": "TM:hr79x8vfnd98",
+	 "Family Guy": {"PETER": "TM:9yh8jn3p854a", "LOIS": "TM:wy2db085axmp", "CHRIS": "TM:hr79x8vfnd98",
                   "MEG": "TM:0mtxnabh71sg", "BRIAN": "TM:rwwrq41105rq", "STEWIE": "TM:24nz88eyawr3",
                   "QUAGMIRE": "TM:r5wr1yrqeh58", "ADAM WEST": "TM:561qe3qb2w6f"}
     }
