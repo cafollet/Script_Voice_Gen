@@ -1,4 +1,4 @@
-import json, requests, logging, simpleaudio, wave, string, sys, curses
+import json, requests, logging, simpleaudio, wave, string, sys, curses, re
 from show_chars import Show
 from pwinput import pwinput
 from time import sleep
@@ -99,26 +99,36 @@ def stream_print(line: str) -> None:
 
 
 if __name__ == '__main__':
-    user_choice1 = menu('Show Script Generation Program\n', ['Create a script', 'Add a new show and characters'],
-                        'blue')
-    print(f"output:", user_choice1)
+    user_choice1 = 1
+    while user_choice1 == 1:
+        user_choice1 = menu('Show Script Generation Program\n', ['Create a Script', 'Add/Edit a Show and Characters'],
+                            'blue')
+        print(f"output:", user_choice1)
 
-    # Adding new show and characters
-    if user_choice1 == 1:
+        # Adding new show and characters
+        if user_choice1 == 1:
 
-        new_show_title = input("Show Title: ")
-        new_show_char_dict = {}
-        loop = "Y"
-        while loop != "Y":
-            new_show_character = input("Add Character: ")
-            new_show_char_val = input(f"Add {new_show_character}'s FakeYou Voice Model Key: ")
-            new_show_char_dict[new_show_character] = new_show_char_val
-            loop = input(new_show_character + " added, add another(Y/N)? ")
-        print("\nFeature in development\n")
-        sleep(2)
+            new_show_title = input("Show Title: ")
+            new_show_char_dict = {}
+            loop = "Y"
+            while loop == "Y":
+                with open("userinfo.json", "r") as jsonfile:
+                    data = json.load(jsonfile)
+                new_show_character = input("Add/Edit Character: ").upper()
+                new_show_char_val = input(f"Add {new_show_character}'s FakeYou Voice Model Key: ")
+                new_show_char_dict[new_show_character] = new_show_char_val
+                if new_show_title in data["Characters"]:
+                    data["Characters"][new_show_title][new_show_character] = new_show_char_val
+                else:
+                    data["Characters"][new_show_title] = {new_show_character: new_show_char_val}
+                with open("Userinfo.json", "w") as jsonfile:
+                    json.dump(data, jsonfile, indent=4)
+                loop = input(new_show_character + " added, add another(Y/N)? ")
+            # print("\nFeature in development\n")
+            # sleep(2)
 
     # Creating a script
-    elif user_choice1 == 0:
+    if user_choice1 == 0:
         #  Open the JSON config file
         with open('userinfo.json') as json_file:
             # Remove comments in JSON
@@ -227,10 +237,11 @@ if __name__ == '__main__':
         else:
             line_list = []
             for i, x in enumerate(script):
+
                 # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
                 # "CHARACTER" for voice assignment
-                split_name = x.split(" ")
-
+                split_name = re.split(":| ", x)
+                print(split_name)
                 if (split_name[0] in name_bank) \
                         or ((len(split_name)) > 1
                             and ((split_name[0] + " " + split_name[1]) in name_bank)):
@@ -243,7 +254,7 @@ if __name__ == '__main__':
 
                 # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
                 # "CHARACTER" for voice assignment
-                split_name = x.split(" ")
+                split_name = re.split(":| ", x)
 
                 if (split_name[0] in name_bank)\
                         or ((len(split_name)) > 1

@@ -23,7 +23,7 @@ class Show:
                                               f"to 5 of the following characters: {self.characters} "
                                               "How each script should be formatted: "
                                               "'{LOCATION}\n\n{PERSON 1} ({optional: emotion or action}):\n{Speech 1}"
-                                              "\n\n{PERSON 2} ({optional: emotion or action})\n{Speech 2}...'. "
+                                              "\n\n{PERSON 2} ({optional: emotion or action}):\n{Speech 2}...'. "
                                               "Try to refrain from writing actions. if "
                                               "you include characters emotions, write them on the same line as the "
                                               "characters name. Each script should only take place in ONE location and "
