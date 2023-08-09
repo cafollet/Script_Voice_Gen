@@ -324,7 +324,7 @@ if __name__ == '__main__':
                     # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
                     # "CHARACTER" for voice assignment
                     split_name = re.split(":| ", x)
-                    print(split_name)
+                    # print(split_name)
                     if (split_name[0] in name_bank) \
                             or ((len(split_name)) > 1
                                 and ((split_name[0] + " " + split_name[1]) in name_bank)):
@@ -360,10 +360,15 @@ if __name__ == '__main__':
                         voicemodel_uuid = model_dict[char_name]
                         text = line
                         id_tok = token_gen()
-                        sleep(1)
-                        audio_uuid = requests.post("https://api.fakeyou.com/tts/inference",
-                                                   json=dict(uuid_idempotency_token=id_tok, tts_model_token=voicemodel_uuid,
-                                                             inference_text=text)).json()['inference_job_token']
+                        audio_uuid = {}
+                        while 'inference_job_token' not in audio_uuid:
+                            sleep(1)
+                            print("Small error: added one second")
+                            audio_uuid = requests.post("https://api.fakeyou.com/tts/inference",
+                                                       json=dict(uuid_idempotency_token=id_tok,
+                                                                 tts_model_token=voicemodel_uuid,
+                                                                 inference_text=text)).json()
+                        audio_uuid = audio_uuid['inference_job_token']
                         print("\n")
                         audio_url = None
                         for t in range(1200):
