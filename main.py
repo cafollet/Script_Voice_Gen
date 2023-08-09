@@ -8,11 +8,16 @@ import random as rd
 from jsmin import jsmin
 
 
-def menu(title, classes, color='white'):
-    # define the curses wrapper
+def menu(title: str, classes: list[str], color: str = 'white') -> int:
+    """
+    Wrapper for command line menu screen
+    :param title: Title of menu screen
+    :param classes: options user can choose from
+    :param color: color of selected option
+    :return: option choice as index of classes
+    """
     def character(stdscr, ):
         attributes = {}
-        # stuff i copied from the internet that i'll put in the right format later
         icol = {
             1: 'red',
             2: 'green',
@@ -71,7 +76,7 @@ def menu(title, classes, color='white'):
     return curses.wrapper(character)
 
 
-def token_gen():
+def token_gen() -> str:
     """
     Generates a random token string for FakeYou requests
     """
@@ -367,11 +372,12 @@ if __name__ == '__main__':
                         audio_uuid = {}
                         while 'inference_job_token' not in audio_uuid:
                             sleep(1)
-                            print("Small error: added one second")
+                            logging.debug("Error: Could not find inference_job_token key, retrying")
                             audio_uuid = requests.post("https://api.fakeyou.com/tts/inference",
                                                        json=dict(uuid_idempotency_token=id_tok,
                                                                  tts_model_token=voicemodel_uuid,
                                                                  inference_text=text)).json()
+                        logging.debug("Success: found inference_job_token key")
                         audio_uuid = audio_uuid['inference_job_token']
                         print("\n")
                         audio_url = None
@@ -418,7 +424,7 @@ if __name__ == '__main__':
                             with wave.open(f"scene/line_{x+1}.wav", "rb") as file:
                                 n = file.getnframes()
                                 content = file.readframes(n)
-                            print("{:<20s} {:<10s}".format(lines[2 * x], lines[(2 * (x + 1)) - 1]))
+                            print("{:<30s} {:<10s}".format(lines[2 * x], lines[(2 * (x + 1)) - 1]))
                             sample = simpleaudio.WaveObject(audio_data=content,
                                                             sample_rate=sample_rate,
                                                             num_channels=num_channels,
