@@ -387,9 +387,6 @@ if __name__ == '__main__':
                         if audio_url is None:
                             print("\nProduction Failed")
                         else:
-                            # if t < 20:
-                            #     sleep(20)
-                            #     t += 20
                             print(f"\r", end="")
                             print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ",
                                   output["state"]["status"])
