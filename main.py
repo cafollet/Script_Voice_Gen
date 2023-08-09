@@ -329,6 +329,10 @@ if __name__ == '__main__':
                             or ((len(split_name)) > 1
                                 and ((split_name[0] + " " + split_name[1]) in name_bank)):
                         line_list.append(x)
+                if line_list == []:
+                    print("\n\nScript Could Not Be Generated :(\n\n")
+                    sleep(2)
+                    exit()
                 count = 0
                 lines = []
                 for i, x in enumerate(script):
@@ -414,7 +418,7 @@ if __name__ == '__main__':
                             with wave.open(f"scene/line_{x+1}.wav", "rb") as file:
                                 n = file.getnframes()
                                 content = file.readframes(n)
-                            print(lines[2 * x], ":\t\t", lines[(2 * (x + 1)) - 1])
+                            print("{:<20s} {:<10s}".format(lines[2 * x], lines[(2 * (x + 1)) - 1]))
                             sample = simpleaudio.WaveObject(audio_data=content,
                                                             sample_rate=sample_rate,
                                                             num_channels=num_channels,
