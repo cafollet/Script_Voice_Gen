@@ -264,6 +264,7 @@ if __name__ == '__main__':
             #  Define the ID Keys for The OpenAI and FakeYou APIs
             if username == '' or password == '':
                 print("FakeYou Login Credentials Skipped\n")
+                session = requests.Session()
                 pass
             else:
 
