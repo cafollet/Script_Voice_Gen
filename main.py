@@ -236,7 +236,7 @@ if __name__ == '__main__':
                 # Remove comments in JSON
                 user_info = jsmin(json_file.read(), quote_chars="/*")
             config_dict = json.loads(user_info)
-            if config_dict["OpenAI_Key"] == "default":
+            if config_dict["OpenAI_Key"].lower() == "default":
                 temp_var = pwinput(prompt='OpenAI API Key: ')
                 openai_key = temp_var
             else:
@@ -244,14 +244,14 @@ if __name__ == '__main__':
 
             username = ''
             password = ''
-            if config_dict["FakeYou"]["User"] == "default":
+            if config_dict["FakeYou"]["User"].lower() == "default":
                 username = input("FakeYou Username or email (Press enter/return to skip this step, "
                                  "but the processing will be slower without a premium account)")
                 if username != '':
                     password = pwinput()
             else:
                 username = config_dict["FakeYou"]["User"]
-                if config_dict["FakeYou"]["Pass"] == "default":
+                if config_dict["FakeYou"]["Pass"].lower() == "default":
                     password = pwinput(prompt=f'FakeYou Password for {username}: ')
                 else:
                     password = config_dict["FakeYou"]["Pass"]
@@ -304,7 +304,7 @@ if __name__ == '__main__':
                 # END CODE
 
             # Create the show object using the shaw name and character bank given in the JSON file
-            if config_dict['Show'] == "Default":
+            if config_dict['Show'].lower() == "default":
                 user_choice3 = menu('Choose a Show', [x for x in config_dict["Characters"]], 'blue')
                 for i, x in enumerate(config_dict["Characters"]):
                     if i == user_choice3:
