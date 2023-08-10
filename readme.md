@@ -1,6 +1,6 @@
 # Script/Voice Gen
 
-Script/Voice Gen is a Python program which generates a script using the chatGPT.
+Script/Voice Gen is a Python program which generates a script using the chatGPT API, and generates audio files from those characters using the FakeYou API.
 
 ## Installation
 
