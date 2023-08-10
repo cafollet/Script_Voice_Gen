@@ -6,13 +6,15 @@ from os import path, mkdir
 from numpy import random
 import random as rd
 from jsmin import jsmin
+from multiprocessing import Process
 
+# menu function source: https://stackoverflow.com/a/70520442 user:15887215
 
 def menu(title: str, classes: list[str], color: str = 'white') -> int:
     """
-    Wrapper for command line menu screen
+    Wrapper for command line menu screen,
     :param title: Title of menu screen
-    :param classes: options user can choose from
+    :param classes: Options user can choose from
     :param color: color of selected option
     :return: option choice as index of classes
     """
@@ -79,6 +81,7 @@ def menu(title: str, classes: list[str], color: str = 'white') -> int:
 def token_gen() -> str:
     """
     Generates a random token string for FakeYou requests
+    :return: string in the format of "A12345B-C67891D-E01112F-G13141H"
     """
     seed_1 = random.randint(10000, 99999)
     let_seed1 = rd.choice(string.ascii_letters)
@@ -97,10 +100,34 @@ def token_gen() -> str:
 
 
 def stream_print(line: str) -> None:
-    for c in s:
+    """
+    prints line as a stream of characters one at a time
+    :param line: string to print
+    :return: None
+    """
+    for c in line:
         sys.stdout.write(c)
         sys.stdout.flush()
-        time.sleep(0.15)
+        sleep(0.03)
+
+
+def run_parallel(fn1, fn2, arg1, arg2):
+    p1 = Process(target=fn1, args=arg1)
+    p1.start()
+    p2 = Process(target=fn2, args=arg2)
+    p2.start()
+    p1.join()
+    p2.join()
+
+
+def play_audio(audio) -> None:
+    """
+
+    :param audio: WaveObject that will be played
+    :return: None
+    """
+    start = audio.play()
+    start.wait_done()
 
 
 if __name__ == '__main__':
@@ -199,21 +226,8 @@ if __name__ == '__main__':
                                     new_title = input(f"Enter the new title for {x_global}: ")
                                     data["Characters"][new_title] = data["Characters"][x_global]
                                     del data["Characters"][x_global]
-                #    while loop == "Y":
-                #        new_show_character = input("Add New Character: ")
-                #        new_show_char_val = input(f"Add {new_show_character}'s FakeYou Voice Model Key: ")
-                #        new_show_character = new_show_character.upper()
-                #        new_show_char_dict[new_show_character] = new_show_char_val
-                #        if new_show_title in data["Characters"]:
-                #            data["Characters"][new_show_title][new_show_character] = new_show_char_val
-                #        else:
-                #            data["Characters"][new_show_title] = {new_show_character: new_show_char_val}
                 with open("Userinfo.json", "w") as jsonfile:
                     json.dump(data, jsonfile, indent=4)
-                #    loop = input(new_show_character + " added, add another(Y/N)? ")
-
-            # print("\nFeature in development\n")
-            # sleep(2)
 
         # Creating a script
         if user_choice1 == 0:
@@ -236,11 +250,11 @@ if __name__ == '__main__':
                 if username != '':
                     password = pwinput()
             else:
-                username = config_dict["Fakeyou"]["User"]
+                username = config_dict["FakeYou"]["User"]
                 if config_dict["FakeYou"]["Pass"] == "default":
                     password = pwinput(prompt=f'FakeYou Password for {username}: ')
                 else:
-                    password = config_dict["Fakeyou"]["Pass"]
+                    password = config_dict["FakeYou"]["Pass"]
 
             #  Define global variables for wave files
             sample_rate = 16000
@@ -261,8 +275,8 @@ if __name__ == '__main__':
                 # login payload
 
                 logging.debug("Sending Login request")
-
-                loginHandler = requests.Session().post("https://api.fakeyou.com/login", json=ljson)
+                session = requests.Session()
+                loginHandler = session.post("https://api.fakeyou.com/login", json=ljson)
                 # sending the login request, this will return cookies and status
                 logging.debug("Login request sent")
 
@@ -275,8 +289,8 @@ if __name__ == '__main__':
                     if lrjson["success"]:
                         # login success
                         logging.debug("Login has been done successfully")
-                        sjson = requests.Session().get("https://api.fakeyou.com/session").json()
-                        print("Success!")
+                        sjson = session.get("https://api.fakeyou.com/session").json()
+                        print("\nFakeYou Login Success!\n")
 
                     elif lrjson["success"] is False and lrjson["error_type"] == "InvalidCredentials":
                         # login failed
@@ -314,7 +328,7 @@ if __name__ == '__main__':
                     script_text.write(script_str)
 
             print("\nScript Generated")
-            sleep(1)
+            sleep(0.3)
             print("\nVoice Generation Started")
             model_dict = show.voice_ids
             name_bank = show.characters
@@ -373,7 +387,7 @@ if __name__ == '__main__':
                         while 'inference_job_token' not in audio_uuid:
                             sleep(1)
                             logging.debug("Error: Could not find inference_job_token key, retrying")
-                            audio_uuid = requests.post("https://api.fakeyou.com/tts/inference",
+                            audio_uuid = session.post("https://api.fakeyou.com/tts/inference",
                                                        json=dict(uuid_idempotency_token=id_tok,
                                                                  tts_model_token=voicemodel_uuid,
                                                                  inference_text=text)).json()
@@ -383,9 +397,10 @@ if __name__ == '__main__':
                         audio_url = None
                         for t in range(1200):
                             sleep(1)  # check status every second for up to 20 minutes.
-                            output = requests.get(
+                            output = session.get(
                                 f"https://api.fakeyou.com/tts/job/{audio_uuid}").json()
-                            if (t % 10) == 0:
+                            if (t % 1) == 0:            # Change the number after modulo (x) to make
+                                                        # it print progress every x times
                                 print(f"\r", end="")
                                 print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ",
                                       output["state"]["status"], end="")
@@ -398,7 +413,7 @@ if __name__ == '__main__':
                             print("\nProduction Failed")
                         else:
                             print(f"\r", end="")
-                            print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ",
+                            print(f"LINE {count} of {len(line_list)}:\tTIME: {t-1}s, ", "OUTPUT: ",
                                   output["state"]["status"])
                             total = sample_rate * num_channels * bytes_per_sample
 
@@ -407,7 +422,7 @@ if __name__ == '__main__':
                             audio_url = f"https://storage.googleapis.com/vocodes-public{audio_url}"
 
                             logging.info(f"Downloading audio file from: {audio_url}")
-                            content = requests.get(audio_url).content
+                            content = session.get(audio_url).content
                             if not path.exists(f"scene/line_{count}.wav"):
                                 with open(f"scene/line_{count}.wav", "x") as file:
                                     pass
@@ -418,19 +433,20 @@ if __name__ == '__main__':
                                 file.writeframesraw(content)
                 play = None
                 while play != "N":
-                    play = input("Play the script?(Y/N)")
+                    play = input("\nPlay the script?(Y/N)")
                     if play == "Y":
                         for x in range(0, count):
                             with wave.open(f"scene/line_{x+1}.wav", "rb") as file:
                                 n = file.getnframes()
                                 content = file.readframes(n)
-                            print("{:<30s} {:<10s}".format(lines[2 * x], lines[(2 * (x + 1)) - 1]))
                             sample = simpleaudio.WaveObject(audio_data=content,
                                                             sample_rate=sample_rate,
                                                             num_channels=num_channels,
                                                             bytes_per_sample=bytes_per_sample)
-                            control = sample.play()
-                            control.wait_done()
+                            print("{:<30s} ".format(lines[2 * x]), end="")
+                            run_parallel(play_audio, stream_print,
+                                         (sample, ), (f"{lines[(2 * (x + 1)) - 1]}", ))
+                            print("\n")
                             sleep(1)
                     else:
                         pass
