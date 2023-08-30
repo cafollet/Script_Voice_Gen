@@ -178,12 +178,62 @@ if __name__ == '__main__':
                                         if user_choice6 == len(data["Characters"][x_global]):
                                             loop = 0
                                             while loop != 1:
-                                                show_character = input("Add Character: ")
-                                                show_char_val = input(f"Add {show_character}'s FakeYou Voice Model Key: ")
-                                                loop = menu(f"{show_character} added, add another? \n",
-                                                            ["Yes", "No"], "blue")
-                                                show_character = show_character.upper()
-                                                data["Characters"][x_global][show_character] = show_char_val
+                                                # show_character = input("Add Character: ")
+                                                # show_char_val = input(f"Add {show_character}'s
+                                                # "FakeYou Voice Model Key: ")
+                                                
+                                                
+                                                show_char_val = input(
+                                                    f"Add Character's FakeYou Voice Model Key or Search Character by "
+                                                    f"Name: ")
+                                                characters = requests.get(
+                                                    "https://api.fakeyou.com/tts/list").json()["models"]
+                                                show_character = None
+                                                character_search = None
+                                                if show_char_val[:3] == "TM:":
+                                                    for x in characters:
+                                                        if x["model_token"] == show_char_val:
+                                                            length = len(x["title"])
+                                                            for i, y in enumerate(x["title"]):
+                                                                if y == "(":
+                                                                    length = i-1
+                                                            show_character = x["title"][0:length]
+                                                            break
+                                                else:
+                                                    for x in characters:
+                                                        if show_char_val.lower() in x["title"].lower() and \
+                                                                character_search is None:
+                                                            character_search = [x]
+                                                        elif show_char_val.lower() in x["title"].lower():
+                                                            character_search.append(x)
+                                                    if character_search is not None:
+                                                        def rating_calc(character):
+                                                            return round((character['user_ratings']['positive_count'] 
+                                                                          / character['user_ratings']['total_count'])
+                                                                         * 5, 2)
+                                                        character_search.sort(key=rating_calc, reverse=True)
+                                                        selection = menu(
+                                                            f"Which {show_char_val} do you want?", 
+                                                            [f"{y['title']},  Rating: "
+                                                             f"{rating_calc(y)}/5, "
+                                                             f"Popularity:{y['user_ratings']['total_count']} Ratings" 
+                                                             for y in character_search],
+                                                            "blue")
+                                                        chosen_character = character_search[selection]
+                                                        length = len(chosen_character["title"])
+                                                        for i, y in enumerate(chosen_character["title"]):
+                                                            if y == "(":
+                                                                length = i - 1
+                                                        show_character = chosen_character["title"][0:length]
+                                                        show_char_val = chosen_character["model_token"]
+                                                if show_character is None and character_search is None:
+                                                    loop = menu("Voice model does not exist! Try again? \n",
+                                                                ["Yes", "No"], "blue")
+                                                else:    
+                                                    loop = menu(f"{show_character} added, add another? \n",
+                                                                ["Yes", "No"], "blue")
+                                                    show_character = show_character.upper()
+                                                    data["Characters"][x_global][show_character] = show_char_val
 
                                         elif user_choice6 < len(data["Characters"][x_global]):
                                             count3 = 0
@@ -308,146 +358,156 @@ if __name__ == '__main__':
                 user_choice3 = menu('Choose a Show', [x for x in config_dict["Characters"]], 'blue')
                 for i, x in enumerate(config_dict["Characters"]):
                     if i == user_choice3:
-                        show = Show(x, config_dict['Characters'][x])
+                        show = Show(x, config_dict['Characters'][x], openai_key)
                         break
             else:
-                show = Show(config_dict['Show'], config_dict['Characters'][config_dict["Show"]])
+                show = Show(config_dict['Show'], config_dict['Characters'][config_dict["Show"]], openai_key)
 
-            #  Prompt the command line to ask for a script
-            prompt = input(f"Write a '{show.show}' prompt: ")
-            script_str = show.write(openai_key, prompt)
-            script = list(script_str.split("\n"))
+            # Start while loop to allow continuation of the script
+            contin = 2
+            while contin != 1:
 
-            if not path.isdir("scene"):
-                mkdir("scene")
+                #  Prompt the command line to ask for a script
+                if contin == 2:
+                    prompt = input(f"Write a '{show.show}' prompt: ")
+                    script_str = show.write(prompt)
+                elif contin == 0:
+                    prompt = input(f"Add an additional prompt: ")
+                    script_str = show.contn(prompt)
+                script = list(script_str.split("\n"))
 
-            if path.exists("scene/script.txt"):
-                with open("scene/script.txt", "w") as script_text:
-                    script_text.write(script_str)
-            else:
-                with open("scene/script.txt", "x") as script_text:
-                    script_text.write(script_str)
+                if not path.isdir("scene"):
+                    mkdir("scene")
 
-            print("\nScript Generated")
-            sleep(0.3)
-            print("\nVoice Generation Started")
-            model_dict = show.voice_ids
-            name_bank = show.characters
-            scene_bank = []
-            if script == ['Bad_prompt']:
-                print("Bad Prompt, BOZO")
-                pass
-            else:
-                line_list = []
-                for i, x in enumerate(script):
+                if path.exists("scene/script.txt"):
+                    with open("scene/script.txt", "w") as script_text:
+                        script_text.write(script_str)
+                else:
+                    with open("scene/script.txt", "x") as script_text:
+                        script_text.write(script_str)
 
-                    # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
-                    # "CHARACTER" for voice assignment
-                    split_name = re.split(":| ", x)
-                    # print(split_name)
-                    if (split_name[0] in name_bank) \
-                            or ((len(split_name)) > 1
-                                and ((split_name[0] + " " + split_name[1]) in name_bank)):
-                        line_list.append(x)
-                if line_list == []:
-                    print("\n\nScript Could Not Be Generated :(\n\n")
-                    sleep(2)
-                    exit()
-                count = 0
-                lines = []
-                for i, x in enumerate(script):
-                    line = ""
-                    char_name = ""
+                print("\nScript Generated")
+                sleep(0.3)
+                print("\nVoice Generation Started")
+                model_dict = show.voice_ids
+                name_bank = show.characters
+                scene_bank = []
+                if script == ['Bad_prompt']:
+                    print("Bad Prompt, BOZO")
+                    pass
+                else:
+                    line_list = []
+                    for i, x in enumerate(script):
 
-                    # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
-                    # "CHARACTER" for voice assignment
-                    split_name = re.split(":| ", x)
+                        # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
+                        # "CHARACTER" for voice assignment
+                        split_name = re.split(":| ", x)
+                        # print(split_name)
+                        if (split_name[0] in name_bank) \
+                                or ((len(split_name)) > 1
+                                    and ((split_name[0] + " " + split_name[1]) in name_bank)):
+                            line_list.append(x)
+                    if line_list == []:
+                        print("\n\nScript Could Not Be Generated :(\n\n")
+                        sleep(2)
+                        exit()
+                    count = 0
+                    lines = []
+                    for i, x in enumerate(script):
+                        line = ""
+                        char_name = ""
 
-                    if (split_name[0] in name_bank)\
-                            or ((len(split_name)) > 1
-                                and ((split_name[0] + " " + split_name[1]) in name_bank)):
-                        if split_name[0] in name_bank:
-                            char_name = split_name[0]
-                        elif ((len(split_name)) > 1) and ((split_name[0] + " " + split_name[1]) in name_bank):
-                            char_name = split_name[0] + " " + split_name[1]
-                        if char_name not in scene_bank:
-                            scene_bank.append(char_name)
-                        # Keeps track of total lines rendered
-                        count += 1
-                        line = script[i+1]
+                        # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
+                        # "CHARACTER" for voice assignment
+                        split_name = re.split(":| ", x)
 
-                        # Append the single voice lines generated to list to print later
-                        lines.append(f"{x}")
-                        lines.append(f"{line}")
+                        if (split_name[0] in name_bank)\
+                                or ((len(split_name)) > 1
+                                    and ((split_name[0] + " " + split_name[1]) in name_bank)):
+                            if split_name[0] in name_bank:
+                                char_name = split_name[0]
+                            elif ((len(split_name)) > 1) and ((split_name[0] + " " + split_name[1]) in name_bank):
+                                char_name = split_name[0] + " " + split_name[1]
+                            if char_name not in scene_bank:
+                                scene_bank.append(char_name)
+                            # Keeps track of total lines rendered
+                            count += 1
+                            line = script[i+1]
 
-                        # Send the line to FakeYou api
-                        voicemodel_uuid = model_dict[char_name]
-                        text = line
-                        id_tok = token_gen()
-                        audio_uuid = {}
-                        while 'inference_job_token' not in audio_uuid:
-                            sleep(1)
-                            logging.debug("Error: Could not find inference_job_token key, retrying")
-                            audio_uuid = session.post("https://api.fakeyou.com/tts/inference",
-                                                       json=dict(uuid_idempotency_token=id_tok,
-                                                                 tts_model_token=voicemodel_uuid,
-                                                                 inference_text=text)).json()
-                        logging.debug("Success: found inference_job_token key")
-                        audio_uuid = audio_uuid['inference_job_token']
-                        print("\n")
-                        audio_url = None
-                        for t in range(1200):
-                            sleep(1)  # check status every second for up to 20 minutes.
-                            output = session.get(
-                                f"https://api.fakeyou.com/tts/job/{audio_uuid}").json()
-                            if (t % 1) == 0:            # Change the number after modulo (x) to make
-                                                        # it print progress every x times
-                                print(f"\r", end="")
-                                print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ",
-                                      output["state"]["status"], end="")
-                            if output["state"]["status"] == "complete_success":
-                                audio_url = output["state"]["maybe_public_bucket_wav_audio_path"]
-                                break
-                            elif output["state"]["status"] == "dead" or output["state"]["status"] == "complete_failure":
-                                break
-                        if audio_url is None:
-                            print("\nProduction Failed")
-                        else:
-                            print(f"\r", end="")
-                            print(f"LINE {count} of {len(line_list)}:\tTIME: {t-1}s, ", "OUTPUT: ",
-                                  output["state"]["status"])
-                            total = sample_rate * num_channels * bytes_per_sample
+                            # Append the single voice lines generated to list to print later
+                            lines.append(f"{x}")
+                            lines.append(f"{line}")
 
-                            logging.basicConfig(level=logging.INFO)
-
-                            audio_url = f"https://storage.googleapis.com/vocodes-public{audio_url}"
-
-                            logging.info(f"Downloading audio file from: {audio_url}")
-                            content = session.get(audio_url).content
-                            if not path.exists(f"scene/line_{count}.wav"):
-                                with open(f"scene/line_{count}.wav", "x") as file:
-                                    pass
-                            with wave.open(f"scene/line_{count}.wav", "wb") as file:
-                                file.setframerate(sample_rate)
-                                file.setnchannels(num_channels)
-                                file.setsampwidth(bytes_per_sample)
-                                file.writeframesraw(content)
-                play = None
-                while play != "N":
-                    play = input("\nPlay the script?(Y/N)")
-                    if play == "Y":
-                        for x in range(0, count):
-                            with wave.open(f"scene/line_{x+1}.wav", "rb") as file:
-                                n = file.getnframes()
-                                content = file.readframes(n)
-                            sample = simpleaudio.WaveObject(audio_data=content,
-                                                            sample_rate=sample_rate,
-                                                            num_channels=num_channels,
-                                                            bytes_per_sample=bytes_per_sample)
-                            print("{:<30s} ".format(lines[2 * x]), end="")
-                            run_parallel(play_audio, stream_print,
-                                         (sample, ), (f"{lines[(2 * (x + 1)) - 1]}", ))
+                            # Send the line to FakeYou api
+                            voicemodel_uuid = model_dict[char_name]
+                            text = line
+                            id_tok = token_gen()
+                            audio_uuid = {}
+                            while 'inference_job_token' not in audio_uuid:
+                                sleep(1)
+                                logging.debug("Error: Could not find inference_job_token key, retrying")
+                                audio_uuid = session.post("https://api.fakeyou.com/tts/inference",
+                                                           json=dict(uuid_idempotency_token=id_tok,
+                                                                     tts_model_token=voicemodel_uuid,
+                                                                     inference_text=text)).json()
+                            logging.debug("Success: found inference_job_token key")
+                            audio_uuid = audio_uuid['inference_job_token']
                             print("\n")
-                            sleep(1)
-                    else:
-                        pass
+                            audio_url = None
+                            for t in range(1200):
+                                sleep(1)  # check status every second for up to 20 minutes.
+                                output = session.get(
+                                    f"https://api.fakeyou.com/tts/job/{audio_uuid}").json()
+                                if (t % 1) == 0:            # Change the number after modulo (x) to make
+                                                            # it print progress every x times
+                                    print(f"\r", end="")
+                                    print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ",
+                                          output["state"]["status"], end="")
+                                if output["state"]["status"] == "complete_success":
+                                    audio_url = output["state"]["maybe_public_bucket_wav_audio_path"]
+                                    break
+                                elif output["state"]["status"] == "dead" or output["state"]["status"] == "complete_failure":
+                                    break
+                            if audio_url is None:
+                                print("\nProduction Failed")
+                            else:
+                                print(f"\r", end="")
+                                print(f"LINE {count} of {len(line_list)}:\tTIME: {t-1}s, ", "OUTPUT: ",
+                                      output["state"]["status"])
+                                total = sample_rate * num_channels * bytes_per_sample
+
+                                logging.basicConfig(level=logging.INFO)
+
+                                audio_url = f"https://storage.googleapis.com/vocodes-public{audio_url}"
+
+                                logging.info(f"Downloading audio file from: {audio_url}")
+                                content = session.get(audio_url).content
+                                if not path.exists(f"scene/line_{count}.wav"):
+                                    with open(f"scene/line_{count}.wav", "x") as file:
+                                        pass
+                                with wave.open(f"scene/line_{count}.wav", "wb") as file:
+                                    file.setframerate(sample_rate)
+                                    file.setnchannels(num_channels)
+                                    file.setsampwidth(bytes_per_sample)
+                                    file.writeframesraw(content)
+                    play = None
+                    while play != 1:
+                        play = menu("Play the script?", ["Yes", "No"], 'blue')
+                        if play == 0:
+                            if contin == 0:
+                                print(show.old_gen_script)
+                            for x in range(0, count):
+                                with wave.open(f"scene/line_{x+1}.wav", "rb") as file:
+                                    n = file.getnframes()
+                                    content = file.readframes(n)
+                                sample = simpleaudio.WaveObject(audio_data=content,
+                                                                sample_rate=sample_rate,
+                                                                num_channels=num_channels,
+                                                                bytes_per_sample=bytes_per_sample)
+                                print("{:<30s} ".format(lines[2 * x]), end="")
+                                run_parallel(play_audio, stream_print,
+                                             (sample, ), (f"{lines[(2 * (x + 1)) - 1]}", ))
+                                print("\n")
+                                sleep(1)
+                contin = menu("Continue the script?", ["Yes", "No"], 'blue')
+
