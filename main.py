@@ -1,5 +1,6 @@
-import json, requests, logging, simpleaudio, wave, string, sys, curses, re
+import json, requests, logging, simpleaudio, wave, string, sys, curses, re, io, os
 from show_chars import Show
+from PIL import Image
 from pwinput import pwinput
 from time import sleep
 from os import path, mkdir
@@ -9,6 +10,7 @@ from jsmin import jsmin
 from multiprocessing import Process
 
 # menu function source: https://stackoverflow.com/a/70520442 user:15887215
+
 
 def menu(title: str, classes: list[str], color: str = 'white') -> int:
     """
@@ -27,7 +29,8 @@ def menu(title: str, classes: list[str], color: str = 'white') -> int:
             4: 'blue',
             5: 'magenta',
             6: 'cyan',
-            7: 'white'
+            7: 'white',
+            0: 'black'
         }
         # put the stuff in the right format
         col = {v: k for k, v in icol.items()}
@@ -35,13 +38,14 @@ def menu(title: str, classes: list[str], color: str = 'white') -> int:
         # declare the background color
 
         bc = curses.COLOR_BLACK
+        hbc = curses.COLOR_WHITE
 
         # make the 'normal' format
         curses.init_pair(1, 7, bc)
         attributes['normal'] = curses.color_pair(1)
 
         # make the 'highlighted' format
-        curses.init_pair(2, col[color], bc)
+        curses.init_pair(2, col[color], hbc)
         attributes['highlighted'] = curses.color_pair(2)
 
         # handle the menu
@@ -131,39 +135,53 @@ def play_audio(audio) -> None:
 
 
 if __name__ == '__main__':
-    user_choice1 = 1
+    user_choice1 = 1  # change user_choice var names?
+
+    # main menu while loop
     while user_choice1 != 2:
         user_choice1 = menu('Show Script Generation Program\n',
-                            ['Create a Script', 'Add/Edit a Show and Characters', "Exit"], 'blue')
+                            ['Create a Script', 'Add/Edit a Show and Characters', "Exit"], 'black')
 
-        # Adding new show and characters
+        # adding/editing new show and characters
         if user_choice1 == 1:
             user_choice2 = 0
+
+            # edit show menu while loop
             while user_choice2 != 2:
                 user_choice2 = menu('Add or Edit new Show\n',
-                                    ['Add New Show', 'Edit Show and Characters', "Exit"], 'blue')
+                                    ['Add New Show', 'Edit Show and Characters', "Exit"], 'black')
+
+                # opening config json file to edit as dictionary
                 with open("userinfo.json", "r") as jsonfile:
                     data = json.load(jsonfile)
+
+                # add new show option
                 if user_choice2 == 0:
                     new_show_title = input("Show Title: ")
-                    data["Characters"][new_show_title] = {}
+                    data["Characters"][new_show_title] = {}  # creates new show title dict entry, with empty characters
+
+                # edit show and characters option
                 elif user_choice2 == 1:
-                    user_list3 = [x for x in data["Characters"]]
+                    user_list3 = [x for x in data["Characters"]]  # list of available shows to edit
                     user_list3.append("Exit")
                     user_choice3 = 0
+
+                    # edit show menu while loop
                     while user_choice3 != len(user_list3) - 1:
-                        user_choice3 = menu('Edit Show\n', user_list3, 'blue')
-                        user_choice4 = 1
-                        user_choice5 = 1
-                        if user_choice3 != len(user_list3) - 1:
+                        user_choice3 = menu('Edit Show\n', user_list3, 'black')
+                        user_choice4, user_choice5 = 1, 1
+                        if user_choice3 != len(user_list3) - 1:  # person has chosen to edit a show
+
+                            # edit or delete show or characters menu while loop
                             while user_choice4 != 3 and (not (user_choice4 == 2 or user_choice5 == 0)):
                                 user_choice4 = menu('Edit or Delete Show or Characters:\n',
-                                                    ["Edit Show Title", "Edit Characters", "Delete Show", "Exit"], "blue")
+                                                    ["Edit Show Title", "Edit Characters", "Delete Show", "Exit"],
+                                                    "black")
                                 for i, x in enumerate(data["Characters"]):
                                     if i == user_choice3:
                                         x_global = x
                                 if user_choice4 == 2:
-                                    user_choice5 = menu("Are you sure?\n", ["No", "Yes"], "blue")
+                                    user_choice5 = menu("Are you sure?\n", ["No", "Yes"], "black")
                                     if user_choice5 == 1:
                                         del data["Characters"][x_global]
                                         user_list3.remove(x_global)
@@ -174,15 +192,10 @@ if __name__ == '__main__':
                                         user_list6.append("Add New Character")
                                         user_list6.append("Exit")
                                         user_choice6 = menu('Pick a Character to Edit:\n',
-                                                            user_list6, "blue")
+                                                            user_list6, "black")
                                         if user_choice6 == len(data["Characters"][x_global]):
                                             loop = 0
                                             while loop != 1:
-                                                # show_character = input("Add Character: ")
-                                                # show_char_val = input(f"Add {show_character}'s
-                                                # "FakeYou Voice Model Key: ")
-                                                
-                                                
                                                 show_char_val = input(
                                                     f"Add Character's FakeYou Voice Model Key or Search Character by "
                                                     f"Name: ")
@@ -218,7 +231,7 @@ if __name__ == '__main__':
                                                              f"{rating_calc(y)}/5, "
                                                              f"Popularity:{y['user_ratings']['total_count']} Ratings" 
                                                              for y in character_search],
-                                                            "blue")
+                                                            "black")
                                                         chosen_character = character_search[selection]
                                                         length = len(chosen_character["title"])
                                                         for i, y in enumerate(chosen_character["title"]):
@@ -228,10 +241,10 @@ if __name__ == '__main__':
                                                         show_char_val = chosen_character["model_token"]
                                                 if show_character is None and character_search is None:
                                                     loop = menu("Voice model does not exist! Try again? \n",
-                                                                ["Yes", "No"], "blue")
+                                                                ["Yes", "No"], "black")
                                                 else:    
                                                     loop = menu(f"{show_character} added, add another? \n",
-                                                                ["Yes", "No"], "blue")
+                                                                ["Yes", "No"], "black")
                                                     show_character = show_character.upper()
                                                     data["Characters"][x_global][show_character] = show_char_val
 
@@ -246,7 +259,7 @@ if __name__ == '__main__':
                                                             new_name = x
                                                         user_choice7 = menu(f"Edit {new_name}'s name or Voice ID?",
                                                                             ["Name", "Voice ID", "Delete Character",
-                                                                             "Exit"], 'blue')
+                                                                             "Exit"], 'black')
                                                         if user_choice7 == 0:
                                                             count3 += 1
                                                             new_name = input(f"Change {new_name}'s name to: ").upper()
@@ -260,7 +273,7 @@ if __name__ == '__main__':
                                                             old_name = new_name
                                                         elif user_choice7 == 2:
                                                             user_choice8 = menu("Are you sure?\n", ["No", "Yes"],
-                                                                                "blue")
+                                                                                "black")
                                                             if user_choice8 == 1:
                                                                 old_name = x
                                                             else:
@@ -276,10 +289,12 @@ if __name__ == '__main__':
                                     new_title = input(f"Enter the new title for {x_global}: ")
                                     data["Characters"][new_title] = data["Characters"][x_global]
                                     del data["Characters"][x_global]
-                with open("Userinfo.json", "w") as jsonfile:
+
+                # save all information put in/taken out of dictionary to jsonfile
+                with open("userinfo.json", "w") as jsonfile:
                     json.dump(data, jsonfile, indent=4)
 
-        # Creating a script
+        # creating a script
         if user_choice1 == 0:
             #  Open the JSON config file
             with open('userinfo.json') as json_file:
@@ -355,7 +370,7 @@ if __name__ == '__main__':
 
             # Create the show object using the shaw name and character bank given in the JSON file
             if config_dict['Show'].lower() == "default":
-                user_choice3 = menu('Choose a Show', [x for x in config_dict["Characters"]], 'blue')
+                user_choice3 = menu('Choose a Show', [x for x in config_dict["Characters"]], 'black')
                 for i, x in enumerate(config_dict["Characters"]):
                     if i == user_choice3:
                         show = Show(x, config_dict['Characters'][x], openai_key)
@@ -407,15 +422,33 @@ if __name__ == '__main__':
                                 or ((len(split_name)) > 1
                                     and ((split_name[0] + " " + split_name[1]) in name_bank)):
                             line_list.append(x)
+                        if char_name not in scene_bank:
+                            scene_bank.append(char_name)
                     if line_list == []:
                         print("\n\nScript Could Not Be Generated :(\n\n")
+                        script_set = None
                         sleep(2)
                         exit()
+                    else:
+                        image_url = show.generate_set()
+                        script_set = requests.get(image_url).content
+                        r = requests.get(image_url)
+                        if r.status_code == 200:
+                            i = Image.open(io.BytesIO(r.content))
+                            i.save(os.path.join('scene', 'image.jpg'))
                     count = 0
                     lines = []
+                    action_bank = {}
                     for i, x in enumerate(script):
                         line = ""
                         char_name = ""
+                        if script[i-1] == "" and script[i+1] == "":
+                            # this line is an action
+                            action_bank[count] = x
+
+                            ##
+                            ## ADD CODE TO SEND ACTION TO VIDEO API AND RECIEVE VIDEO
+                            ##
 
                         # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
                         # "CHARACTER" for voice assignment
@@ -428,8 +461,6 @@ if __name__ == '__main__':
                                 char_name = split_name[0]
                             elif ((len(split_name)) > 1) and ((split_name[0] + " " + split_name[1]) in name_bank):
                                 char_name = split_name[0] + " " + split_name[1]
-                            if char_name not in scene_bank:
-                                scene_bank.append(char_name)
                             # Keeps track of total lines rendered
                             count += 1
                             line = script[i+1]
@@ -443,6 +474,8 @@ if __name__ == '__main__':
                             text = line
                             id_tok = token_gen()
                             audio_uuid = {}
+                            text_to_vid_gen = f"{char_name} is talking to the characters in this list: {scene_bank}, " \
+                                              f"with the line: {text}"
                             while 'inference_job_token' not in audio_uuid:
                                 sleep(1)
                                 logging.debug("Error: Could not find inference_job_token key, retrying")
@@ -492,7 +525,7 @@ if __name__ == '__main__':
                                     file.writeframesraw(content)
                     play = None
                     while play != 1:
-                        play = menu("Play the script?", ["Yes", "No"], 'blue')
+                        play = menu("Play the script?", ["Yes", "No"], 'black')
                         if play == 0:
                             if contin == 0:
                                 print(show.old_gen_script)
@@ -509,5 +542,5 @@ if __name__ == '__main__':
                                              (sample, ), (f"{lines[(2 * (x + 1)) - 1]}", ))
                                 print("\n")
                                 sleep(1)
-                contin = menu("Continue the script?", ["Yes", "No"], 'blue')
+                contin = menu("Continue the script?", ["Yes", "No"], 'black')
 
