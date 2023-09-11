@@ -417,11 +417,11 @@ if __name__ == '__main__':
                         # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
                         # "CHARACTER" for voice assignment
                         split_name = re.split(":| ", x)
-                        # print(split_name)
                         if (split_name[0] in name_bank) \
                                 or ((len(split_name)) > 1
                                     and ((split_name[0] + " " + split_name[1]) in name_bank)):
                             line_list.append(x)
+                        char_name = split_name[0]
                         if char_name not in scene_bank:
                             scene_bank.append(char_name)
                     if line_list == []:
@@ -430,7 +430,7 @@ if __name__ == '__main__':
                         sleep(2)
                         exit()
                     else:
-                        image_url = show.generate_set()
+                        image_url = show.generate_set(scene_bank)
                         script_set = requests.get(image_url).content
                         r = requests.get(image_url)
                         if r.status_code == 200:
@@ -442,7 +442,7 @@ if __name__ == '__main__':
                     for i, x in enumerate(script):
                         line = ""
                         char_name = ""
-                        if script[i-1] == "" and script[i+1] == "":
+                        if (i + 1 < len(script)) and (script[i-1] == "" and script[i+1] == ""):
                             # this line is an action
                             action_bank[count] = x
 
