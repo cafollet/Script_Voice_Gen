@@ -13,6 +13,7 @@ class Show:
         self.old_gen_script = None
         self.additional_prompt = None
         self.previous_prompt = None
+        self.location = None
         openai.api_key = key
         
     def contn(self, additional_prompt):
@@ -101,16 +102,17 @@ class Show:
         )
         self.previous_prompt = prompt
         self.gen_script = response['choices'][0]['message']['content']
+        self.location = self.gen_script.split("\n")[2]
         return self.gen_script
 
-    def generate_set(self):
+    def generate_set(self, characters):
         """
         Generates the set image for the script
         :return:
         """
         response = openai.Image.create(
-            prompt=f"A set image in the style of {self.show} using the characters and set description in the script:"
-                   f" {self.gen_script}",
+            prompt=f"Set background in the style of {self.show} using the characters in the list ({characters}) and "
+                   f"set description: {self.location}",
             n=1,
             size="1024x1024"
         )
@@ -118,4 +120,4 @@ class Show:
         return image_url
 
     def generate_vid(self, runway_key):
-        
+        return 0
