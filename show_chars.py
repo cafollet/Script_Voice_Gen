@@ -77,6 +77,7 @@ class Show:
                                               "How each script should be formatted: "
                                               "'{LOCATION}\n\n{PERSON 1} ({optional: emotion or action}):\n{Speech 1}"
                                               "\n\n{PERSON 2} ({optional: emotion or action}):\n{Speech 2}...'. "
+                                              "The location given in the beginning should be very descriptive."
                                               "Try to refrain from writing actions. if "
                                               "you include characters emotions, write them on the same line as the "
                                               "characters name. Each script should only take place in ONE location and "
@@ -101,9 +102,20 @@ class Show:
         self.previous_prompt = prompt
         self.gen_script = response['choices'][0]['message']['content']
         return self.gen_script
-    def transform(self):
+
+    def generate_set(self):
         """
-        Transforms the script string into a list for
+        Generates the set image for the script
         :return:
         """
+        response = openai.Image.create(
+            prompt=f"A set image in the style of {self.show} using the characters and set description in the script:"
+                   f" {self.gen_script}",
+            n=1,
+            size="1024x1024"
+        )
+        image_url = response['data'][0]['url']
+        return image_url
 
+    def generate_vid(self, runway_key):
+        
