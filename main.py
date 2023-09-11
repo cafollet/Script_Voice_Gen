@@ -431,7 +431,10 @@ if __name__ == '__main__':
                         exit()
                     else:
                         image_url = show.generate_set(scene_bank)
-                        script_set = requests.get(image_url).content
+                        if image_url is None:
+                            pass
+                        else:
+                            script_set = requests.get(image_url).content
                         r = requests.get(image_url)
                         if r.status_code == 200:
                             i = Image.open(io.BytesIO(r.content))

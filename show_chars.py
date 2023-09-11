@@ -78,7 +78,8 @@ class Show:
                                               "How each script should be formatted: "
                                               "'{LOCATION}\n\n{PERSON 1} ({optional: emotion or action}):\n{Speech 1}"
                                               "\n\n{PERSON 2} ({optional: emotion or action}):\n{Speech 2}...'. "
-                                              "The location given in the beginning should be very descriptive."
+                                              "The location given in the beginning should be very descriptive, but "
+                                              "should NOT include anything that would be flagged by moderation. "
                                               "Try to refrain from writing actions. if "
                                               "you include characters emotions, write them on the same line as the "
                                               "characters name. Each script should only take place in ONE location and "
@@ -110,12 +111,24 @@ class Show:
         Generates the set image for the script
         :return:
         """
-        response = openai.Image.create(
-            prompt=f"Set background in the style of {self.show} using the characters in the list ({characters}) and "
-                   f"set description: {self.location}",
-            n=1,
-            size="1024x1024"
+        prompt = f"Background shot in the location described: '{self.location}' for the show: '{self.show}' using the "
+        prompt = prompt + f"characters in the list ({characters})."
+        moderation = openai.Moderation.create(
+            input=prompt,
         )
+        if moderation["results"][0]["flagged"]:
+            response = {'data': [{'url': None}]}
+            print("Error, prompt has:")
+            for x in moderation["results"]["flagged"]:
+                if moderation["results"]["flagged"][x]:
+                    print(x)
+            print("So image cant be generated")
+        else:
+            response = openai.Image.create(
+                prompt=prompt,
+                n=1,
+                size="1024x1024"
+            )
         image_url = response['data'][0]['url']
         return image_url
 
