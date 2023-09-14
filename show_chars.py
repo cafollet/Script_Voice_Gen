@@ -2,7 +2,7 @@ import openai
 
 
 class Show:
-    """Class that stores all of a shows information"""
+    """Class that stores all of a show's information"""
     def __init__(self, show: str, char_dict: str, key: str) -> None:
         """Takes show title and character dictionary where every characters name is
         assigned to its respective FakeYou ID"""
@@ -14,6 +14,7 @@ class Show:
         self.additional_prompt = None
         self.previous_prompt = None
         self.location = None
+        self.global_prompt = None
         openai.api_key = key
         
     def contn(self, additional_prompt):
@@ -32,9 +33,8 @@ class Show:
             messages=[
                 {"role": "system", "content": f"You are a script interpreter that continues a {self.show} script"
                                               "based on the script given" + addition +
-                                              "You should only return your continuation from the script given, and "
-                                              "should NOT include the script given. Each script "
-                                              "addition should be no more than 20 lines, no less than "
+                                              "your response should not include any of the previous script. Each script"
+                                              " addition should be no more than 20 lines, no less than "
                                               "5 lines, and should only include a continuation of character lines "
                                               "in the same format as the initial script given, and can only include the"
                                               f" characters from this pool: {self.characters}. since you are "
@@ -63,6 +63,7 @@ class Show:
         return gen_cont
 
     def write(self, prompt: str) -> str:
+        self.global_prompt = prompt
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-16k",
             messages=[
@@ -111,21 +112,33 @@ class Show:
         Generates the set image for the script
         :return:
         """
-        prompt = f"Background shot in the location described: '{self.location}' for the show: '{self.show}' using the "
-        prompt = prompt + f"characters in the list ({characters})."
+        self.location = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-16k",
+            messages=[
+                {"role": "system", "content": f"Replace vulgar words with safe words in "
+                                              f"this location text '{self.location}', for this show: '{self.show}', "
+                                              f"while keeping the same number of words, then return the location"},
+            ]
+        )['choices'][0]['message']['content']
+        safety_prompt = f"script set-establishing shot in the location described: '{self.location}' for the show: "
+        safety_prompt = safety_prompt + f"'{self.show}' including the characters: '{characters}'."
         moderation = openai.Moderation.create(
-            input=prompt,
+            input=safety_prompt,
         )
-        if moderation["results"][0]["flagged"]:
+        # print(safety_prompt)
+        # print(moderation)
+        # print("location:", self.location)
+        if moderation["results"][0]["flagged"] or moderation["results"][0]["flagged"]:
             response = {'data': [{'url': None}]}
-            print("Error, prompt has:")
-            for x in moderation["results"]["flagged"]:
-                if moderation["results"]["flagged"][x]:
+            print("Error, prompt has:", end=" ")
+            for x in moderation["results"][0]["categories"]:
+                if moderation["results"][0]["categories"][x]:
                     print(x)
             print("So image cant be generated")
+            sleep(5)
         else:
             response = openai.Image.create(
-                prompt=prompt,
+                prompt=safety_prompt,
                 n=1,
                 size="1024x1024"
             )
