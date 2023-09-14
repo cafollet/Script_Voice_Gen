@@ -12,30 +12,25 @@ from multiprocessing import Process
 # menu function source: https://stackoverflow.com/a/70520442 user:15887215
 
 
-def menu(title: str, classes: list[str], color: str = 'white') -> int:
-    """
-    Wrapper for command line menu screen,
-    :param title: Title of menu screen
-    :param classes: Options user can choose from
-    :param color: color of selected option
-    :return: option choice as index of classes
-    """
+def menu(title, classes, color='white'):
+    # define the curses wrapper
     def character(stdscr, ):
         attributes = {}
+        # stuff i copied from the internet that i'll put in the right format later
         icol = {
+            0: 'black',
             1: 'red',
             2: 'green',
             3: 'yellow',
             4: 'blue',
             5: 'magenta',
             6: 'cyan',
-            7: 'white',
-            0: 'black'
+            7: 'white'
         }
         # put the stuff in the right format
         col = {v: k for k, v in icol.items()}
 
-        # declare the background color
+        # declare the background colors
 
         bc = curses.COLOR_BLACK
         hbc = curses.COLOR_WHITE
@@ -51,10 +46,12 @@ def menu(title: str, classes: list[str], color: str = 'white') -> int:
         # handle the menu
         c = 0
         option = 0
+        stdscr.scrollok(True)
+        stdscr.idlok(1)
         while c != 10:
 
             stdscr.erase()  # clear the screen (you can erase this if you want)
-
+            # for eventual better navigation: stdscr.move(option, 0)
             # add the title
             stdscr.addstr(f"{title}\n", curses.color_pair(1))
 
@@ -70,6 +67,7 @@ def menu(title: str, classes: list[str], color: str = 'white') -> int:
 
                 stdscr.addstr(f'> ', attr)
                 stdscr.addstr(f'{classes[i]}' + '\n', attr)
+
             c = stdscr.getch()
 
             # handle the arrow keys
@@ -77,6 +75,7 @@ def menu(title: str, classes: list[str], color: str = 'white') -> int:
                 option -= 1
             elif c == curses.KEY_DOWN and option < len(classes) - 1:
                 option += 1
+
         return option
 
     return curses.wrapper(character)
@@ -135,6 +134,7 @@ def play_audio(audio) -> None:
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     user_choice1 = 1  # change user_choice var names?
 
     # main menu while loop
@@ -221,9 +221,12 @@ if __name__ == '__main__':
                                                             character_search.append(x)
                                                     if character_search is not None:
                                                         def rating_calc(character):
-                                                            return round((character['user_ratings']['positive_count'] 
-                                                                          / character['user_ratings']['total_count'])
-                                                                         * 5, 2)
+                                                            if character['user_ratings']['total_count'] > 0:
+                                                                return round((character['user_ratings']['positive_count']
+                                                                              / character['user_ratings']['total_count'])
+                                                                             * 5, 2)
+                                                            else:
+                                                                return 0
                                                         character_search.sort(key=rating_calc, reverse=True)
                                                         selection = menu(
                                                             f"Which {show_char_val} do you want?", 
@@ -394,21 +397,39 @@ if __name__ == '__main__':
                 if not path.isdir("scene"):
                     mkdir("scene")
 
-                if path.exists("scene/script.txt"):
-                    with open("scene/script.txt", "w") as script_text:
+                if not path.isdir(f"scene/{show.show}"):
+                    mkdir(f"scene/{show.show}")
+
+                if path.isdir(f"scene/{show.show}/{show.global_prompt}"):
+                    cool_count = 0
+                    cool_prompt = f"{show.global_prompt}"
+                    while path.isdir(f"scene/{show.show}/{cool_prompt}") and contin == 2:
+                        cool_count += 1
+                        cool_prompt = f"{show.global_prompt}_{cool_count}"
+                    if contin == 0:
+                        pass
+                    else:
+                        mkdir(f"scene/{show.show}/{cool_prompt}")
+                        scene_path = f"scene/{show.show}/{cool_prompt}"
+                else:
+                    mkdir(f"scene/{show.show}/{show.global_prompt}")
+                    scene_path = f"scene/{show.show}/{show.global_prompt}"
+
+                if path.exists(f"{scene_path}/script.txt"):
+                    with open(f"{scene_path}/script.txt", "w") as script_text:
                         script_text.write(script_str)
                 else:
-                    with open("scene/script.txt", "x") as script_text:
+                    with open(f"{scene_path}/script.txt", "x") as script_text:
                         script_text.write(script_str)
 
                 print("\nScript Generated")
-                sleep(0.3)
+                sleep(1)
                 print("\nVoice Generation Started")
                 model_dict = show.voice_ids
                 name_bank = show.characters
                 scene_bank = []
                 if script == ['Bad_prompt']:
-                    print("Bad Prompt, BOZO")
+                    print("Bad Prompt")
                     pass
                 else:
                     line_list = []
@@ -421,27 +442,40 @@ if __name__ == '__main__':
                                 or ((len(split_name)) > 1
                                     and ((split_name[0] + " " + split_name[1]) in name_bank)):
                             line_list.append(x)
-                        char_name = split_name[0]
-                        if char_name not in scene_bank:
-                            scene_bank.append(char_name)
-                    if line_list == []:
+                            char_name = split_name[0]
+                            if char_name not in scene_bank:
+                                scene_bank.append(char_name)
+                    while not line_list:
                         print("\n\nScript Could Not Be Generated :(\n\n")
-                        script_set = None
-                        sleep(2)
-                        exit()
+                        script_str = show.contn('')
+                        script = list(script_str.split("\n"))
+                        for i, x in enumerate(script):
+
+                            # split_name variable created to detect with lines like "CHARACTER (action)" and change them to
+                            # "CHARACTER" for voice assignment
+                            split_name = re.split(":| ", x)
+                            if (split_name[0] in name_bank) \
+                                    or ((len(split_name)) > 1
+                                        and ((split_name[0] + " " + split_name[1]) in name_bank)):
+                                line_list.append(x)
+                                char_name = split_name[0]
+                                if char_name not in scene_bank:
+                                    scene_bank.append(char_name)
                     else:
                         image_url = show.generate_set(scene_bank)
                         if image_url is None:
                             pass
                         else:
                             script_set = requests.get(image_url).content
-                        r = requests.get(image_url)
-                        if r.status_code == 200:
-                            i = Image.open(io.BytesIO(r.content))
-                            i.save(os.path.join('scene', 'image.jpg'))
+                            r = requests.get(image_url)
+                            if r.status_code == 200:
+                                i = Image.open(io.BytesIO(r.content))
+                                i.save(os.path.join(f"{scene_path}", "image.jpg"))
                     count = 0
                     lines = []
                     action_bank = {}
+                    audio_uuids = []
+                    # Request all voices for loop
                     for i, x in enumerate(script):
                         line = ""
                         char_name = ""
@@ -457,6 +491,7 @@ if __name__ == '__main__':
                         # "CHARACTER" for voice assignment
                         split_name = re.split(":| ", x)
 
+                        # Character line conditional statement
                         if (split_name[0] in name_bank)\
                                 or ((len(split_name)) > 1
                                     and ((split_name[0] + " " + split_name[1]) in name_bank)):
@@ -476,74 +511,90 @@ if __name__ == '__main__':
                             voicemodel_uuid = model_dict[char_name]
                             text = line
                             id_tok = token_gen()
+                            sleep(0.5)
                             audio_uuid = {}
                             text_to_vid_gen = f"{char_name} is talking to the characters in this list: {scene_bank}, " \
                                               f"with the line: {text}"
                             while 'inference_job_token' not in audio_uuid:
-                                sleep(1)
                                 logging.debug("Error: Could not find inference_job_token key, retrying")
                                 audio_uuid = session.post("https://api.fakeyou.com/tts/inference",
-                                                           json=dict(uuid_idempotency_token=id_tok,
-                                                                     tts_model_token=voicemodel_uuid,
-                                                                     inference_text=text)).json()
+                                                          json=dict(uuid_idempotency_token=id_tok,
+                                                                    tts_model_token=voicemodel_uuid,
+                                                                    inference_text=text)).json()
+                                sleep(2)
+
                             logging.debug("Success: found inference_job_token key")
+                            print(f"\r", end="")
+                            print(f"Sent {count}/{len(line_list)} ({round(count*100/len(line_list), 0)}% done)", end="")
                             audio_uuid = audio_uuid['inference_job_token']
-                            print("\n")
-                            audio_url = None
-                            for t in range(1200):
-                                sleep(1)  # check status every second for up to 20 minutes.
-                                output = session.get(
-                                    f"https://api.fakeyou.com/tts/job/{audio_uuid}").json()
-                                if (t % 1) == 0:            # Change the number after modulo (x) to make
-                                                            # it print progress every x times
-                                    print(f"\r", end="")
-                                    print(f"LINE {count} of {len(line_list)}:\tTIME: {t}s, ", "OUTPUT: ",
-                                          output["state"]["status"], end="")
-                                if output["state"]["status"] == "complete_success":
-                                    audio_url = output["state"]["maybe_public_bucket_wav_audio_path"]
-                                    break
-                                elif output["state"]["status"] == "dead" or output["state"]["status"] == "complete_failure":
-                                    break
-                            if audio_url is None:
-                                print("\nProduction Failed")
-                            else:
+                            audio_uuids.append(audio_uuid)
+                    print("\n")
+                    if contin == 2:
+                        count = 0
+                        prev_length = 0
+                    elif contin == 0:
+                        count = prev_length
+                    # prompt for finish all voices
+                    for token in audio_uuids:
+                        count += 1
+                        audio_url = None
+                        for t in range(12000):
+                            sleep(0.1)  # check status every second for up to 20 minutes.
+
+                            output = session.get(
+                                f"https://api.fakeyou.com/tts/job/{token}").json()
+                            if (t % 10) == 0:            # Change the number after modulo (x) to make
+                                                        # it print progress every x times
                                 print(f"\r", end="")
-                                print(f"LINE {count} of {len(line_list)}:\tTIME: {t-1}s, ", "OUTPUT: ",
-                                      output["state"]["status"])
-                                total = sample_rate * num_channels * bytes_per_sample
+                                print(f"LINE {count} of {prev_length + len(line_list)}:\tTIME: {t / 10}s, ", "OUTPUT: ",
+                                      output["state"]["status"], end="")
+                            if output["state"]["status"] == "complete_success":
+                                audio_url = output["state"]["maybe_public_bucket_wav_audio_path"]
+                                break
+                            elif output["state"]["status"] == "dead" or output["state"]["status"] == "complete_failure":
+                                break
+                        if audio_url is None:
+                            print("\nProduction Failed")
+                        else:
+                            print(f"\r", end="")
+                            print(f"LINE {count} of {prev_length + len(line_list)}:\tTIME: {round(t / 10, 0)}s, ", "OUTPUT: ",
+                                  output["state"]["status"])
+                            total = sample_rate * num_channels * bytes_per_sample
 
-                                logging.basicConfig(level=logging.INFO)
+                            logging.basicConfig(level=logging.INFO)
 
-                                audio_url = f"https://storage.googleapis.com/vocodes-public{audio_url}"
+                            audio_url = f"https://storage.googleapis.com/vocodes-public{audio_url}"
 
-                                logging.info(f"Downloading audio file from: {audio_url}")
-                                content = session.get(audio_url).content
-                                if not path.exists(f"scene/line_{count}.wav"):
-                                    with open(f"scene/line_{count}.wav", "x") as file:
-                                        pass
-                                with wave.open(f"scene/line_{count}.wav", "wb") as file:
-                                    file.setframerate(sample_rate)
-                                    file.setnchannels(num_channels)
-                                    file.setsampwidth(bytes_per_sample)
-                                    file.writeframesraw(content)
+                            logging.info(f"Downloading audio file from: {audio_url}")
+                            content = session.get(audio_url).content
+                            if not path.exists(f"{scene_path}/line_{count}.wav"):
+                                with open(f"{scene_path}/line_{count}.wav", "x") as file:
+                                    pass
+                            with wave.open(f"{scene_path}/line_{count}.wav", "wb") as file:
+                                file.setframerate(sample_rate)
+                                file.setnchannels(num_channels)
+                                file.setsampwidth(bytes_per_sample)
+                                file.writeframesraw(content)
                     play = None
                     while play != 1:
                         play = menu("Play the script?", ["Yes", "No"], 'black')
                         if play == 0:
                             if contin == 0:
                                 print(show.old_gen_script)
-                            for x in range(0, count):
-                                with wave.open(f"scene/line_{x+1}.wav", "rb") as file:
+                            for x in range(prev_length, count):
+                                with wave.open(f"{scene_path}/line_{x+1}.wav", "rb") as file:
                                     n = file.getnframes()
                                     content = file.readframes(n)
                                 sample = simpleaudio.WaveObject(audio_data=content,
                                                                 sample_rate=sample_rate,
                                                                 num_channels=num_channels,
                                                                 bytes_per_sample=bytes_per_sample)
-                                print("{:<30s} ".format(lines[2 * x]), end="")
+                                print("{:<30s} ".format(lines[2 * (x-prev_length)]), end="")
                                 run_parallel(play_audio, stream_print,
-                                             (sample, ), (f"{lines[(2 * (x + 1)) - 1]}", ))
+                                             (sample, ), (f"{lines[(2 * ((x-prev_length) + 1)) - 1]}", ))
                                 print("\n")
-                                sleep(1)
+                                sleep(0.5)
+                    prev_length = count
+                    # print("prev length:", prev_length)
                 contin = menu("Continue the script?", ["Yes", "No"], 'black')
 
